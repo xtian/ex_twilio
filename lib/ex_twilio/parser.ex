@@ -15,6 +15,8 @@ defmodule ExTwilio.Parser do
   @type parsed_response :: success | error
   @type parsed_list_response :: success_list | error
 
+  @json_library Application.get_env(:ex_twilio, :json_library, Poison)
+
   @doc """
   Parse a response expected to contain a single resource. If you pass in a
   module as the first argument, the JSON will be parsed into that module's
@@ -43,7 +45,7 @@ defmodule ExTwilio.Parser do
   @spec parse(HTTPoison.Response.t(), module) :: success | error
   def parse(response, module) do
     handle_errors(response, fn body ->
-      Poison.decode!(body, as: target(module))
+      @json_library.decode!(body, as: target(module))
     end)
   end
 
@@ -84,7 +86,7 @@ defmodule ExTwilio.Parser do
     result =
       handle_errors(response, fn body ->
         as = Map.put(%{}, key, [target(module)])
-        Poison.decode!(body, as: as)
+        @json_library.decode!(body, as: as)
       end)
 
     case result do
@@ -103,7 +105,7 @@ defmodule ExTwilio.Parser do
         :ok
 
       %{body: body, status_code: status} ->
-        {:ok, json} = Poison.decode(body)
+        json = @json_library.decode!(body)
         {:error, json["message"], status}
     end
   end
